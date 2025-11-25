@@ -43,6 +43,8 @@ from pathlib import Path
 from bpy_extras.io_utils import ImportHelper
 import webbrowser
 import json
+import threading
+import queue
 from . import Functions
 
 
@@ -81,9 +83,16 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
     """Batch converts 3D files and associated textures into other formats"""
     bl_idname = "transmogrifier.transmogrify"
     bl_label = "Batch Convert"
+    
+    _timer = None
+    _thread = None
+    _queue = None
+    _process = None
+    
     file_count = 0
+    total_files = 0
 
-    def execute(self, context):
+    def invoke(self, context, event):
         settings = bpy.context.scene.transmogrifier_settings
         imports = bpy.context.scene.transmogrifier_imports
         exports = bpy.context.scene.transmogrifier_exports
@@ -126,39 +135,72 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
                 self.report({'ERROR'}, message)
                 return {'FINISHED'}
 
-        # Create path to Converter.py
-        converter_py = Path(__file__).parent.resolve() / "Converter.py"
+        # Calculate total files for progress bar
+        self.total_files = 0
+        import_files_dict = Functions.get_import_files(self, context)
+        for key, value in import_files_dict.items():
+            self.total_files += len(value)
+            
+        # If optimization is off, we might be exporting multiple formats per file, 
+        # but the converter loop structure in Converter.py iterates over imports first.
+        # The "CONVERTER END" message appears after each export if not optimized?
+        # Let's check Converter.py logic. 
+        # If optimize: loop imports -> loop exports -> converter(). 
+        # If not optimize: loop imports -> converter_stage_import -> loop exports -> converter_stage_export.
+        # "CONVERTER END" is printed in converter_stage_export.
+        # So total steps = total imports * total exports (roughly).
+        # Let's count total export actions.
+        
+        num_exports = len(exports)
+        self.total_steps = self.total_files * num_exports
+        
+        # Initialize queue
+        self._queue = queue.Queue()
+        
+        # Start the process
+        self.start_transmogrification(context)
+        
+        # Start Progress Bar
+        context.window_manager.progress_begin(0, self.total_steps)
+        
+        # Start Modal
+        self._timer = context.window_manager.event_timer_add(0.1, window=context.window)
+        context.window_manager.modal_handler_add(self)
+        
+        return {'RUNNING_MODAL'}
 
-        self.file_count = 0
+    def modal(self, context, event):
+        if event.type == 'TIMER':
+            # Read from queue
+            while not self._queue.empty():
+                try:
+                    line = self._queue.get_nowait()
+                    if "CONVERTER END:" in line:
+                        self.file_count += 1
+                        context.window_manager.progress_update(self.file_count)
+                except queue.Empty:
+                    break
+            
+            # Check if process is finished
+            if self._process.poll() is not None:
+                context.window_manager.progress_end()
+                self.finish(context)
+                return {'FINISHED'}
+                
+        elif event.type == 'ESC':
+            self.cancel(context)
+            return {'CANCELLED'}
+            
+        return {'PASS_THROUGH'}
 
-        # Transmogrify! (aka Batch Convert)
-        self.transmogrify(context)
+    def cancel(self, context):
+        if self._process:
+            self._process.kill()
+        context.window_manager.progress_end()
+        context.window_manager.event_timer_remove(self._timer)
+        self.report({'INFO'}, "Conversion Cancelled")
 
-        # Report batch conversion results.
-        if self.file_count == 0:
-            self.report({'ERROR'}, "Could not convert.")
-        else:
-            converter_report_json = Path(__file__).parent.resolve() / "Converter_Report.json"
-            converter_report_dict = Functions.read_json(converter_report_json)
-            conversion_count = converter_report_dict["conversion_count"]
-            if conversion_count > 1:
-                self.report({'INFO'}, f"Conversion complete. {conversion_count} files were converted.")
-            elif conversion_count == 1:
-                self.report({'INFO'}, f"Conversion complete. {conversion_count} file was converted.")
-            else:
-                self.report({'INFO'}, f"Could not convert or no items needed conversion. {conversion_count} files were converted.")
-
-        return {'FINISHED'}
-
-
-    def select_children_recursive(self, obj, context):
-        for c in obj.children:
-            if obj.type in context.scene.transmogrifier.texture_resolution_include:
-                c.select_set(True)
-            self.select_children_recursive(c, context)
-
-
-    def transmogrify(self, context):
+    def start_transmogrification(self, context):
         # Create settings_dict dictionary from transmogrifier_settings to pass to write_json function later.
         settings_dict = Functions.get_settings_dict(self, context, True, True)
 
@@ -178,21 +220,56 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
         settings_json = Path(__file__).parent.resolve() / "Settings.json"
         Functions.write_json(settings_dict, settings_json)
 
-
         # Run Converter.py
-        subprocess.call(
+        self._process = subprocess.Popen(
             [
                 blender_dir,
                 converter_blend,
                 "--python",
                 converter_py,
             ],
-            cwd=transmogrifier_dir
+            cwd=transmogrifier_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+            universal_newlines=True
         ) 
         
+        # Start thread to read stdout
+        self._thread = threading.Thread(target=self.read_stdout, args=(self._process, self._queue))
+        self._thread.daemon = True
+        self._thread.start()
 
-        print("Conversion Complete")
-        self.file_count += 1
+    def read_stdout(self, process, queue):
+        for line in iter(process.stdout.readline, ''):
+            queue.put(line)
+            print(line, end='') # Print to Blender console as well
+        process.stdout.close()
+
+    def select_children_recursive(self, obj, context):
+        for c in obj.children:
+            if obj.type in context.scene.transmogrifier.texture_resolution_include:
+                c.select_set(True)
+            self.select_children_recursive(c, context)
+
+    def finish(self, context):
+        context.window_manager.event_timer_remove(self._timer)
+        
+        # Report batch conversion results.
+        converter_report_json = Path(__file__).parent.resolve() / "Converter_Report.json"
+        if converter_report_json.exists():
+            converter_report_dict = Functions.read_json(converter_report_json)
+            conversion_count = converter_report_dict.get("conversion_count", 0)
+            if conversion_count > 1:
+                self.report({'INFO'}, f"Conversion complete. {conversion_count} files were converted.")
+            elif conversion_count == 1:
+                self.report({'INFO'}, f"Conversion complete. {conversion_count} file was converted.")
+            else:
+                self.report({'INFO'}, f"Could not convert or no items needed conversion. {conversion_count} files were converted.")
+        else:
+             self.report({'ERROR'}, "Could not convert.")
+
 
 
 class TRANSMOGRIFIER_OT_forecast(Operator):
