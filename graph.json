@@ -1,0 +1,197 @@
+{
+  "nodes": [
+    {
+      "id": "",
+      "title": "Home",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "apply_textures/",
+      "title": "Apply Textures",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "batch_convert/",
+      "title": "Batch Convert",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "changelog/",
+      "title": "Changelog",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "community/",
+      "title": "Community",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "convert_via_terminal/",
+      "title": "Convert via terminal",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "export_uv_maps/",
+      "title": "Export UV Maps",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "faq/",
+      "title": "FAQ",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "features_overview/",
+      "title": "Overview",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "general_usage/",
+      "title": "General Usage \ud83c\udfed",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "installation/",
+      "title": "Installation \ud83d\udce5",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "log_conversions/",
+      "title": "Log Conversions",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "mark_assets/",
+      "title": "Mark Assets",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "optimize_file_size/",
+      "title": "Auto-Optimize File Size",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "quickstart_demo/",
+      "title": "Quickstart Demo \ud83e\uddea",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "run_custom_scripts/",
+      "title": "Run Custom Scripts",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "set_scene_properties/",
+      "title": "Set Scene Properties",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "transform_objects/",
+      "title": "Transform Objects",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "uninstall/",
+      "title": "Uninstall \ud83d\udd0c",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "update/",
+      "title": "Update \ud83d\udd01",
+      "tags": [],
+      "group": 1
+    },
+    {
+      "id": "user_interface/",
+      "title": "User Interface",
+      "tags": [],
+      "group": 1
+    }
+  ],
+  "links": [
+    {
+      "source": "",
+      "target": "features_overview/",
+      "value": 1
+    },
+    {
+      "source": "apply_textures/",
+      "target": "faq/",
+      "value": 1
+    },
+    {
+      "source": "batch_convert/",
+      "target": "faq/",
+      "value": 1
+    },
+    {
+      "source": "faq/",
+      "target": "batch_convert/",
+      "value": 3
+    },
+    {
+      "source": "faq/",
+      "target": "apply_textures/",
+      "value": 1
+    },
+    {
+      "source": "faq/",
+      "target": "update/",
+      "value": 1
+    },
+    {
+      "source": "faq/",
+      "target": "uninstall/",
+      "value": 1
+    },
+    {
+      "source": "general_usage/",
+      "target": "batch_convert/",
+      "value": 2
+    },
+    {
+      "source": "general_usage/",
+      "target": "faq/",
+      "value": 2
+    },
+    {
+      "source": "general_usage/",
+      "target": "features_overview/",
+      "value": 2
+    },
+    {
+      "source": "general_usage/",
+      "target": "log_conversions/",
+      "value": 1
+    },
+    {
+      "source": "optimize_file_size/",
+      "target": "log_conversions/",
+      "value": 1
+    },
+    {
+      "source": "update/",
+      "target": "installation/",
+      "value": 1
+    }
+  ]
+}
