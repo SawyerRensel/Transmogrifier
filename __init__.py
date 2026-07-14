@@ -44,9 +44,9 @@ import importlib
 
 bl_info = {
     "name": "Transmogrifier",
-    "author": "Sapwood Studio",
-    "version": (2, 0, 0),
-    "blender": (3, 6),
+    "author": "Sawyer Rensel",
+    "version": (2, 1, 0),
+    "blender": (5, 2),
     "category": "Import-Export",
     "location": "Set in preferences below. Default: 3D Viewport Side Panel (Transmogrifier Tab)",
     "description": "Batch converts 3D files and associated textures into other formats.",
