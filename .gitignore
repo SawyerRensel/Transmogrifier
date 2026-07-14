@@ -1,3 +1,4 @@
 /notes
 .venv
 site/
+.pyc

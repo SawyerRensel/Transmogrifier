@@ -56,55 +56,13 @@ from . import Functions
 #  ░░████████   █████
 #   ░░░░░░░░   ░░░░░ 
 
-
-# Draws the .blend file specific settings used in the
-# Popover panel or Side Panel panel
-def draw_settings_general(self, context):
+def draw_settings_imports(self, context):
     settings = bpy.context.scene.transmogrifier_settings
     imports = bpy.context.scene.transmogrifier_imports
-    exports = bpy.context.scene.transmogrifier_exports
 
     separator_factor = 0.25
-    self.layout.use_property_split = True
-    self.layout.use_property_decorate = False
 
-    # Display combination of title and version from bl_info.
-    version = ''
-    for num in bl_info["version"]:
-        version = version + "." + str(num)
-    version = version.lstrip(".")
-    title = bl_info["name"] + " " + version
-    row = self.layout.row(align=False)
-    row.label(text=title)
-    row.prop(settings, 'logging_save_summary', text='', icon="SPREADSHEET")
-    row.operator('transmogrifier.advanced_ui', text="", icon="OPTIONS", depress=True if settings.advanced_ui else False)
-    help = row.operator('transmogrifier.help', text="", icon="QUESTION")
-    help.link = "https://sawyerrensel.github.io/Transmogrifier"
-
-    # Batch Convert button
-    row = self.layout.row(align=True)
-    row.operator('transmogrifier.transmogrify', icon_value=custom_icons['Transmogrifier_Icon'].icon_id)
-    row.scale_x = 1.25
-    row.operator('transmogrifier.forecast', text='', icon='INFO')
-    row.scale_y = 1.5
-
-    self.layout.separator(factor = separator_factor)
-
-    # Transmogrifier Presets Menu
-    col = self.layout.column(align=True)
-    col.label(text="Workflow Preset", icon='DRIVER')
-    layout = self.layout
-    # Align menu items to the left.
-    self.layout.use_property_split = False
-    row = layout.row(align=True)
-    row.prop(settings, 'transmogrifier_preset_enum')
-    row.operator("transmogrifier.add_preset", text="", icon="ADD")
-    row.operator("transmogrifier.remove_preset", text="", icon="REMOVE")
-    row.operator("transmogrifier.load_preset", text="", icon="FILE_FOLDER")
-
-    self.layout.separator(factor = separator_factor)
-
-    # Import Settings
+       # Import Settings
     box_imports = self.layout.box()
     box_imports.use_property_split = True
     row = box_imports.row(align=True)
@@ -116,7 +74,6 @@ def draw_settings_general(self, context):
     # Add Import button
     col = box_imports.column(align=True)
     col.operator('transmogrifier.add_import', icon="ADD")
-
     # Adapted from Bystedts Blender Baker (GPL-3.0 License, https://3dbystedt.gumroad.com/l/JAqLT), UI.py, Line 508
     # Adapted from Gaffer v3.1.18 (GPL-3.0 License, https://github.com/gregzaal/Gaffer), UI.py, Line 1327
     for index, instance in enumerate(context.scene.transmogrifier_imports):   
@@ -170,6 +127,13 @@ def draw_settings_general(self, context):
 
     self.layout.separator(factor = separator_factor)
 
+
+
+def draw_settings_exports(self, context):
+    settings = bpy.context.scene.transmogrifier_settings
+    exports = bpy.context.scene.transmogrifier_exports
+
+    separator_factor = 0.25
 
     # Export Settings
     self.layout.use_property_split = True
@@ -226,7 +190,7 @@ def draw_settings_general(self, context):
             row.prop(instance, "format")
             if settings.advanced_ui and instance.format == "BLEND":
                 if not instance.pack_resources:
-                   row.prop(instance, 'use_absolute_paths', text='', icon="LOCKED" if instance.use_absolute_paths else "UNLOCKED") 
+                    row.prop(instance, 'use_absolute_paths', text='', icon="LOCKED" if instance.use_absolute_paths else "UNLOCKED") 
                 row.prop(instance, 'pack_resources', text='', icon="PACKAGE" if instance.pack_resources else "UGLYPACKAGE")
 
             # Extension options for USD and glTF formats.
@@ -250,7 +214,7 @@ def draw_settings_general(self, context):
                     row = box.row()
                     row.prop(instance, "directory")
                     if settings.advanced_ui:
-                        if instance.use_subdirectories:
+                        if instance.use_subdirectories and settings.batch_mode != "export":
                             row.prop(instance, "copy_original_contents", text='', icon='COPYDOWN')
                         row.prop(instance, "use_subdirectories", text='', icon='FOLDER_REDIRECT')      
             
@@ -268,11 +232,73 @@ def draw_settings_general(self, context):
             row = box_exports.row(align=True)
             row.prop(settings, 'export_directory')
             if settings.advanced_ui:
-                if settings.use_subdirectories:
+                if settings.use_subdirectories and settings.batch_mode != "export":
                     row.prop(settings, "copy_original_contents", text='', icon='COPYDOWN')
                 row.prop(settings, "use_subdirectories", text='', icon='FOLDER_REDIRECT')
 
     self.layout.separator(factor = separator_factor)
+
+
+# Draws the .blend file specific settings used in the
+# Popover panel or Side Panel panel
+def draw_settings_general(self, context):
+    settings = bpy.context.scene.transmogrifier_settings
+
+    separator_factor = 0.25
+    self.layout.use_property_split = True
+    self.layout.use_property_decorate = False
+
+    # Menu and buttons at the top of the section.
+    row = self.layout.row(align=False)
+    row.prop(settings, 'batch_mode', text='')
+    row.prop(settings, 'logging_save_summary', text='', icon="SPREADSHEET")
+    row.operator('transmogrifier.advanced_ui', text="", icon="OPTIONS", depress=True if settings.advanced_ui else False)
+    help = row.operator('transmogrifier.help', text="", icon="QUESTION")
+    help.link = "https://sawyerrensel.github.io/Transmogrifier/"
+
+    # Batch button
+    row = self.layout.row(align=True)
+    match settings.batch_mode:
+        case "import":
+            row.operator('transmogrifier.batch_import', icon_value=custom_icons['Transmogrifier_Icon'].icon_id)
+        case "convert":
+            row.operator('transmogrifier.transmogrify', icon_value=custom_icons['Transmogrifier_Icon'].icon_id)
+        case "export":
+            row.operator('transmogrifier.batch_export', icon_value=custom_icons['Transmogrifier_Icon'].icon_id)
+
+    
+    row.scale_x = 1.25
+    row.operator('transmogrifier.forecast', text='', icon='INFO')
+    row.scale_y = 1.5
+
+    self.layout.separator(factor = separator_factor)
+
+    # Transmogrifier Presets Menu
+    col = self.layout.column(align=True)
+    col.label(text="Workflow Preset", icon='DRIVER')
+    layout = self.layout
+    # Align menu items to the left.
+    self.layout.use_property_split = False
+    row = layout.row(align=True)
+    row.prop(settings, 'transmogrifier_preset_enum')
+    row.operator("transmogrifier.add_preset", text="", icon="ADD")
+    row.operator("transmogrifier.remove_preset", text="", icon="REMOVE")
+    row.operator("transmogrifier.load_preset", text="", icon="FILE_FOLDER")
+
+    self.layout.separator(factor = separator_factor)
+
+    match settings.batch_mode:
+
+        case "import":
+            draw_settings_imports(self, context)
+ 
+        case "convert":
+            draw_settings_imports(self, context)
+            draw_settings_exports(self, context)
+
+        case "export":
+            draw_settings_exports(self, context)
+
     
 
 # Texture Settings
@@ -774,10 +800,11 @@ def draw_popover(self, context):
 
 # Side Panel panel (used with Side Panel option)
 class VIEW3D_PT_transmogrifier(Panel):
+    version = "".join([(str(num) + ".") for num in bl_info["version"]]).rstrip(".")
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Transmogrifier"
-    bl_label = "Transmogrifier"
+    bl_label = f"Transmogrifier {version}"
 
     def draw(self, context):
         settings = bpy.context.scene.transmogrifier_settings

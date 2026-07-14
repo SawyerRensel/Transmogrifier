@@ -57,6 +57,17 @@ from . import Functions
 
 # Groups together all the addon settings that are saved in each .blend file
 class TRANSMOGRIFIER_PG_TransmogrifierSettings(PropertyGroup):
+    # Transmogrifier batch processing mode: batch import, batch export, batch convert.
+    batch_mode: EnumProperty(
+        name="Batch Mode", 
+        description="Select Transmogrifier's batch processing mode",
+        items=[
+            ("export", "Export", "Set mode to batch export 3D files", 'EXPORT', 1),
+            ("convert", "Convert", "Set mode to batch convert 3D files", 'FILE_REFRESH', 2),
+        ],
+        default="export",
+        update=Functions.update_settings_by_batch_mode,
+    )
     # Advanced UI toggle.
     advanced_ui: BoolProperty(
         name="Advanced UI",
@@ -172,9 +183,9 @@ class TRANSMOGRIFIER_PG_TransmogrifierSettings(PropertyGroup):
     edit_textures_preset_enum: EnumProperty(
         name="", options={'SKIP_SAVE'},
         description="Use texture edit settings from a preset.\n(Create by clicking '+' after adjusting settings in the Edit Textures menu)",
-        items=lambda self, context: Functions.get_transmogrifier_presets('transmogrifier/edit_textures'),
-        get=lambda self: Functions.get_transmogrifier_preset_index('transmogrifier/edit_textures', self.edit_textures_preset),
-        set=lambda self, value: setattr(self, 'edit_textures_preset', Functions.transmogrifier_preset_enum_items_refs['transmogrifier/edit_textures'][value][0]),
+        items=lambda self, context: Functions.get_transmogrifier_presets('transmogrifier.edit_textures'),
+        get=lambda self: Functions.get_transmogrifier_preset_index('transmogrifier.edit_textures', self.edit_textures_preset),
+        set=lambda self, value: setattr(self, 'edit_textures_preset', Functions.transmogrifier_preset_enum_items_refs['transmogrifier.edit_textures'][value][0]),
         update=Functions.set_texture_settings,
     )
     link_texture_settings: BoolProperty(
@@ -872,7 +883,7 @@ class TRANSMOGRIFIER_PG_TransmogrifierImports(PropertyGroup):
     # A string property for saving User option (without new presets changing User choice),...
     preset: StringProperty(
         name="Preset",
-        default='NO_PRESET',
+        default='Example',
     )
 
     # ... and enum property for choosing.
@@ -958,7 +969,7 @@ class TRANSMOGRIFIER_PG_TransmogrifierExports(PropertyGroup):
     # A string property for saving User option (without new presets changing User choice),...
     preset: StringProperty(
         name="Preset",
-        default='NO_PRESET',
+        default='Example',
     )
 
     # ... and enum property for choosing.

@@ -33,6 +33,7 @@ from pathlib import Path
 import glob
 import re
 import json
+import os
 from mathutils import Vector, Euler
 
 
@@ -104,8 +105,11 @@ def load_operator_preset(operator, preset):
     if preset == 'NO_PRESET':
         return options
 
-    for d in bpy.utils.script_paths(subdir="presets/operator/" + operator):
-        fp = "".join([d, "/", preset, ".py"])
+    # for d in bpy.utils.script_paths(subdir="presets/operator/" + operator):
+    presets_path = str(Path("\\\cp.clarkinc.io\\3dassets\\library\\script\\blender\\hub\\presets\\operator")/operator)
+    for preset in os.listdir(presets_path):
+        fp = presets_path + "\\" + preset
+        print(fp)
         if Path(fp).is_file():  # Found the preset file
             print(f"Using preset {fp}")
             file = open(fp, 'r')
@@ -118,6 +122,7 @@ def load_operator_preset(operator, preset):
                     value = split[1]
                     options[key] = eval(value)
             file.close()
+            print(options)
             return options
     # If it didn't find the preset, use empty options
     # (the preset option should look blank if the file doesn't exist anyway)
@@ -338,6 +343,21 @@ def link_export_settings(self, context):
         instance.use_subdirectories = settings.use_subdirectories
         instance.copy_original_contents = settings.copy_original_contents
 
+def update_settings_by_batch_mode(self, context):
+    settings = bpy.context.scene.transmogrifier_settings
+
+    if settings.batch_mode == "export":    
+        settings.export_adjacent = False
+        settings.copy_original_contents = False
+        for index, instance in enumerate(context.scene.transmogrifier_exports):
+            instance.export_adjacent = settings.export_adjacent
+            instance.copy_original_contents = settings.copy_original_contents
+
+    elif settings.batch_mode == "convert":    
+        settings.export_adjacent = True
+        for index, instance in enumerate(context.scene.transmogrifier_exports):
+            instance.export_adjacent = settings.export_adjacent
+
 
 
 # ░█▀▀░█░█░▀█▀░█▀▀░█▀█░█▀▀░▀█▀░█▀█░█▀█░█▀▀
@@ -442,6 +462,17 @@ def check_custom_script_path(self, context, filepath, name):
     
     message = "Script path checks out"
     return True, message
+
+
+# Custom message box pop-up for communicating to the User.
+def show_message_box(message = "", title = "Message Box", icon = 'INFO'):
+
+    def draw(self, context):
+        lines = message.splitlines()
+        for line in lines:
+            self.layout.label(text=line)
+
+    bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
 
 
 
@@ -835,7 +866,7 @@ def set_texture_settings(self, context):
     
     if settings.edit_textures_preset != "NO_PRESET":
         # Load selected Edit Textures preset as a dictionary.
-        transmogrifier_preset_dict = load_transmogrifier_preset('transmogrifier/edit_textures', settings.edit_textures_preset)
+        transmogrifier_preset_dict = load_transmogrifier_preset('transmogrifier.edit_textures', settings.edit_textures_preset)
 
         # Clear any existing textures instances.
         textures.clear()

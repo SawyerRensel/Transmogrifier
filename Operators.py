@@ -61,18 +61,18 @@ class TRANSMOGRIFIER_OT_help(Operator):
     """Open online documentation in web browser"""
     bl_idname = "transmogrifier.help"
     bl_label = "Help"
-    bl_description = "Open online documentation in a web browser\n(https://sawyerrensel.github.io/transmogrifier)"
+    bl_description = "Open online documentation in a web browser\n(https://sapwoodstudio.github.io/transmogrifier)"
     
     link: StringProperty(
         name="Help",
-        default="https://sawyerrensel.github.io/transmogrifier"
+        default="https://SawyerRensel.github.io/Transmogrifier"
     )    
 
     def execute(self, context):   
         try:
             webbrowser.open(self.link)
         except:
-            self.report({'ERROR'}, "Could not open online documentation")
+            self.report({'WARNING'}, "Could not open online documentation")
         return {'FINISHED'}   
 
 
@@ -96,7 +96,7 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
             elif not exports: 
                 message = "Please Add Export"
 
-            self.report({'ERROR'}, message)
+            self.report({'WARNING'}, message)
             return {'FINISHED'}
 
         # Check directory and file paths.  Stop batch converter if they don't check-out.
@@ -107,7 +107,7 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
                     continue
                 directory_checks_out, message = Functions.check_directory_path(self, context, instance.directory)
                 if not directory_checks_out:
-                    self.report({'ERROR'}, message)
+                    self.report({'WARNING'}, message)
                     return {'FINISHED'}
         
         custom_menu_options_to_check = [settings.textures_source, settings.uv_export_location]
@@ -117,13 +117,13 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
                 continue
             directory_checks_out, message = Functions.check_directory_path(self, context, directories_to_check[index])
             if not directory_checks_out:
-                self.report({'ERROR'}, message)
+                self.report({'WARNING'}, message)
                 return {'FINISHED'}
                 
         for index, custom_script in enumerate(scripts):
             custom_script_checks_out, message = Functions.check_custom_script_path(self, context, custom_script.file, custom_script.name)
             if not custom_script_checks_out:
-                self.report({'ERROR'}, message)
+                self.report({'WARNING'}, message)
                 return {'FINISHED'}
 
         # Create path to Converter.py
@@ -136,7 +136,7 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
 
         # Report batch conversion results.
         if self.file_count == 0:
-            self.report({'ERROR'}, "Could not convert.")
+            self.report({'WARNING'}, "Could not convert.")
         else:
             converter_report_json = Path(__file__).parent.resolve() / "Converter_Report.json"
             converter_report_dict = Functions.read_json(converter_report_json)
@@ -195,6 +195,59 @@ class TRANSMOGRIFIER_OT_transmogrify(Operator):
         self.file_count += 1
 
 
+# Operator called when pressing the Batch Convert button.
+class TRANSMOGRIFIER_OT_batch_export(Operator):
+    """Batch export 3D files and associated textures"""
+    bl_idname = "transmogrifier.batch_export"
+    bl_label = "Batch Export"
+    file_count = 0
+
+
+    def execute(self, context):
+        settings = bpy.context.scene.transmogrifier_settings
+        exports = bpy.context.scene.transmogrifier_exports
+        scripts = bpy.context.scene.transmogrifier_scripts
+
+        # Check if there are exports. Stop batch converter if there is not at least one.
+        if not exports: 
+            title = "Info"
+            message = "Please Add Export"
+            Functions.show_message_box(message, title, 'INFO')
+            self.report({'INFO'}, message)
+            return {'FINISHED'}
+
+
+        # Check directory and file paths.  Stop batch converter if they don't check-out.
+        for index, instance in enumerate(exports):
+            if settings.export_adjacent:  # Skip if models are getting exported adjacent to their respective imports.
+                continue
+            directory_checks_out, message = Functions.check_directory_path(self, context, instance.directory)
+            if not directory_checks_out:
+                title = "Warning"
+                Functions.show_message_box(message, title, 'ERROR')
+                self.report({'WARNING'}, message)
+                return {'FINISHED'}
+                
+        for index, custom_script in enumerate(scripts):
+            custom_script_checks_out, message = Functions.check_custom_script_path(self, context, custom_script.file, custom_script.name)
+            if not custom_script_checks_out:
+                title = "Warning"
+                Functions.show_message_box(message, title, 'ERROR')
+                self.report({'WARNING'}, message)
+                return {'FINISHED'}
+
+        # Create path to blender.exe
+        blender_dir = bpy.app.binary_path
+
+        # Create path to Transmogrifier directory
+        transmogrifier_dir = Path(__file__).parent.resolve()
+
+        message = "Batch export complete"
+
+        self.report({'INFO'}, message)
+        return {'FINISHED'}
+
+
 class TRANSMOGRIFIER_OT_forecast(Operator):
     """Calculate batch conversion and display info message of the forecast"""
     bl_idname = "transmogrifier.forecast"
@@ -220,7 +273,7 @@ class TRANSMOGRIFIER_OT_forecast(Operator):
         for i in imports:
             directory_checks_out, message = Functions.check_directory_path(self, context, i.directory)
             if not directory_checks_out:
-                self.report({'ERROR'}, message)
+                self.report({'WARNING'}, message)
                 return {'FINISHED'}
         
         # If import directories exist, get import files.
@@ -259,6 +312,7 @@ class TRANSMOGRIFIER_OT_forecast(Operator):
             self.layout.label(text=message)
 
         bpy.context.window_manager.popup_menu(draw, title=title, icon=icon)
+        
 
 
 
@@ -341,9 +395,9 @@ class TRANSMOGRIFIER_OT_remove_preset(Operator):
             Path(transmogrifier_preset_dir).mkdir(parents=True, exist_ok=True)  # Make Transmogrifier operator preset directory.
         preset_json = transmogrifier_preset_dir / remove_preset_name
 
-        # Return early and report error if Transmogrifier operator preset does not exist.
+        # Return early and report WARNING if Transmogrifier operator preset does not exist.
         if not preset_json.is_file():
-            self.report({'ERROR'}, f"Transmogrifier preset does not exist: {remove_preset_name}")
+            self.report({'WARNING'}, f"Transmogrifier preset does not exist: {remove_preset_name}")
             return {'CANCELLED'}
 
         # Remove Transmogrifier operator preset.
@@ -479,7 +533,7 @@ class TRANSMOGRIFIER_OT_edit_textures_add_preset(Operator):
     def execute(self, context):
         # Set Edit Textures operator preset directory and new preset file.
         add_preset_name = f"{self.preset_name}.json"
-        edit_textures_preset_dir = Path(bpy.utils.user_resource('SCRIPTS', path="presets/operator")) / "transmogrifier" / "edit_textures"
+        edit_textures_preset_dir = Path(bpy.utils.user_resource('SCRIPTS', path="presets/operator")) / "transmogrifier.edit_textures"
         if not Path(edit_textures_preset_dir).exists():  # Check if operator preset directory exists.
             Path(edit_textures_preset_dir).mkdir(parents=True, exist_ok=True)  # Make Edit Textures operator preset directory.
         preset_json = edit_textures_preset_dir / add_preset_name
@@ -509,14 +563,14 @@ class TRANSMOGRIFIER_OT_edit_textures_remove_preset(Operator):
         remove_preset_name = f"{settings.edit_textures_preset_enum}.json"
 
         # Set Edit Textures operator preset directory and preset file to be removed.
-        edit_textures_preset_dir = Path(bpy.utils.user_resource('SCRIPTS', path="presets/operator")) / "transmogrifier" / "edit_textures"
+        edit_textures_preset_dir = Path(bpy.utils.user_resource('SCRIPTS', path="presets/operator")) / "transmogrifier.edit_textures"
         if not Path(edit_textures_preset_dir).exists():  # Check if operator preset directory exists.
             Path(edit_textures_preset_dir).mkdir(parents=True, exist_ok=True)  # Make Edit Textures operator preset directory.
         preset_json = edit_textures_preset_dir / remove_preset_name
 
-        # Return early and report error if Edit Textures operator preset does not exist.
+        # Return early and report WARNING if Edit Textures operator preset does not exist.
         if not preset_json.is_file():
-            self.report({'ERROR'}, f"'Edit Textures' preset does not exist: {remove_preset_name}")
+            self.report({'WARNING'}, f"'Edit Textures' preset does not exist: {remove_preset_name}")
             return {'CANCELLED'}
 
         # Remove Edit Textures operator preset.
@@ -549,7 +603,7 @@ class TRANSMOGRIFIER_OT_edit_textures_load_preset(Operator, ImportHelper):
         preset_name = preset_src.name
         
         # Check if Edit Textures preset directory exists.
-        edit_textures_preset_dir = Path(bpy.utils.user_resource('SCRIPTS', path="presets/operator")) / "transmogrifier" / "edit_textures"
+        edit_textures_preset_dir = Path(bpy.utils.user_resource('SCRIPTS', path="presets/operator")) / "transmogrifier.edit_textures"
         if not Path(edit_textures_preset_dir).exists():  # Check if operator preset directory exists.
             Path(edit_textures_preset_dir).mkdir(parents=True, exist_ok=True)  # Make Edit Texture operator preset directory.
         preset_dest = edit_textures_preset_dir / preset_name
@@ -649,6 +703,7 @@ class TRANSMOGRIFIER_OT_remove_custom_script(Operator):
 classes = (
     TRANSMOGRIFIER_OT_help,
     TRANSMOGRIFIER_OT_transmogrify,
+    TRANSMOGRIFIER_OT_batch_export, 
     TRANSMOGRIFIER_OT_forecast,
     TRANSMOGRIFIER_OT_install_presets,
     TRANSMOGRIFIER_OT_add_preset,

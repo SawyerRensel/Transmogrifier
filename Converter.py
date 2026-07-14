@@ -157,11 +157,20 @@ def make_log_file():
     return log_file
 
 
-# Enable addons that the Converter depends upon, namely Node Wrangler and Materials Utilities.
+# Enable addons that the Converter depends upon, namely Node Wrangler and Material Utilities.
 def enable_addons():
     try:
-        bpy.ops.preferences.addon_enable(module='node_wrangler')
-        bpy.ops.preferences.addon_enable(module='materials_utils')
+        # Allow online access to extensions.blender.org
+        bpy.ops.extensions.userpref_allow_online()
+
+        # Refresh extensions.blender.org repository
+        bpy.ops.extensions.repo_sync_all()
+
+        # Install Material Utilities addon from extensions.blender.org 
+        bpy.ops.extensions.package_install(repo_index=0, pkg_id="material_utilities")
+        
+        # Enable Node Wrangler addon shipped with Blender
+        bpy.ops.preferences.addon_enable(module="node_wrangler")
 
         print("Enabled addons")
         logging.info("Enabled addons")
@@ -699,19 +708,19 @@ def find_replace_pbr_tag(texture):
 
         # Dictionary with regex keys will be used as the pattern by turning it into a list then to a string.
         pbr_dict = {
-            '(?i)^basecolou?r$|^albedo$|^d?iffuse$|^d?iff$|^colou?r$|^col$': 'BaseColor',
-            '(?i)^subsurf.*|^sss$': 'Subsurface',
-            '(?i)^m?etall?ic$|^m?etalness?$|^metal$|^mtl$': 'Metallic', 
-            '(?i)^specul.*|^spe?c$': 'Specular',
-            '(?i)^rou?gh$|^rou?ghn.*|^rgh$': 'Roughness',
-            '(?i)^gloss?y?$|^gloss?iness?$|^gls$': 'Gloss',
-            '(?i)^no?rma?l?$|^nor$': 'Normal',
-            '(?i)^bu?mp$|^bumpiness?$': 'Bump',
-            '(?i)^displacem?e?n?t?$|^di?sp$|^he?i?ght$|^hi?e?ght$': 'Height',
-            '(?i)^tra?nsmi?ss?i?o?n$': 'Transmission',
-            '(?i)^emiss.*|^emit$': 'Emission',
-            '(?i)^alpha$|^opac.*|^tra?ns?pa.*|^transpr.*': 'Opacity',
-            '(?i)^ambi?e?nt$|^occ?lus.*|^ambi?e?ntocc?lusion$|^ao$': 'Occlusion'
+            '^basecolou?r$|^albedo$|^d?iffuse$|^d?iff$|^colou?r$|^col$': 'BaseColor',
+            '^subsurf.*|^sss$': 'Subsurface',
+            '^m?etall?ic$|^m?etalness?$|^metal$|^mtl$': 'Metallic', 
+            '^specul.*|^spe?c$': 'Specular',
+            '^rou?gh$|^rou?ghn.*|^rgh$': 'Roughness',
+            '^gloss?y?$|^gloss?iness?$|^gls$': 'Gloss',
+            '^no?rma?l?$|^nor$': 'Normal',
+            '^bu?mp$|^bumpiness?$': 'Bump',
+            '^displacem?e?n?t?$|^di?sp$|^he?i?ght$|^hi?e?ght$': 'Height',
+            '^tra?nsmi?ss?i?o?n$': 'Transmission',
+            '^emiss.*|^emit$': 'Emission',
+            '^alpha$|^opac.*|^tra?ns?pa.*|^transpr.*': 'Opacity',
+            '^ambi?e?nt$|^occ?lus.*|^ambi?e?ntocc?lusion$|^ao$': 'Occlusion'
         }
 
         dictkeys_pattern = re.compile('|'.join(pbr_dict), re.IGNORECASE)
@@ -744,8 +753,8 @@ def find_replace_transparency_tag(mesh_object):
 
         # Dictionary with regex keys will be used as the pattern by turning it into a list then to a string.
         pbr_dict = {
-            '(?i)^alpha$|^opac.*|^tra?ns?pa.*|^transpr.*|^glass$': 'transparent',
-            '(?i)^cutout$|^cut$|^out$': 'cutout',
+            '^alpha$|^opac.*|^tra?ns?pa.*|^transpr.*|^glass$': 'transparent',
+            '^cutout$|^cut$|^out$': 'transparent',
         }
 
         dictkeys_pattern = re.compile('|'.join(pbr_dict), re.IGNORECASE)
@@ -767,7 +776,7 @@ def find_replace_transparency_tag(mesh_object):
         logging.info(f"Found and replaced transparency tag: {mesh_object_original} --> {mesh_object}")
 
     except Exception as Argument:
-        logging.exception(f"Could not find and replaced transparency tag: {mesh_object_original} --> {mesh_object}")
+        logging.exception(f"Could not find and replace transparency tag: {mesh_object_original} --> {mesh_object}")
 
 
 # Find and rename image textures from a dictionary with regex keys.
@@ -1052,17 +1061,22 @@ def create_a_material(item_name, textures_temp_dir, textures):
         
         # Check if this material includes an opacity map.
         transparency_check = [node for node in material.node_tree.nodes if node.type == 'BSDF_PRINCIPLED' and node.inputs['Alpha'].is_linked]
+        
         if transparency_check:
+            
             # Copy current material and make opaque version in case there are any opaque objects in scene using the same texture set.
             material_opaque = material.copy()
-            material_opaque.blend_method = 'OPAQUE'
-            bpy.data.materials[item_name + ".001"].name = item_name
+            
             # Remove opacity map from opaque material.
             opacity_map = material_opaque.node_tree.nodes["Principled BSDF"].inputs['Alpha'].links[0].from_node
             material_opaque.node_tree.nodes.remove(opacity_map)
+            
             # Add transparency tag to material name and set alpha blend.
             material.name = item_name + "_transparent"
-            material.blend_method = "BLEND"
+
+            # Make sure opaque material doesn't have .001 in its name.
+            material_opaque.name = item_name
+
             print(f"Found an opacity map for texture set: {material_opaque.name}. Created transparent version of material, {material.name}")
             logging.info(f"Found an opacity map for texture set: {material_opaque.name}. Created transparent version of material, {material.name}")
 
@@ -1123,7 +1137,7 @@ def assign_materials(item_name):
 
         # Assuming object names have been regexed for transparency tags, assign the transparency regex dictionary value to variable.
         transparency_tag = "transparent"
-        cutout_tag = "cutout"
+        
         # Test for presence of transparent versions of opaque materials.
         transparent_materials = [material.name for material in bpy.data.materials if transparency_tag in material.name and material.name.replace("_" + transparency_tag, "") in bpy.data.materials]
 
@@ -1148,13 +1162,11 @@ def assign_materials(item_name):
                             print(f"Assigned transparent material, {material_name}, to transparent object, {object.name}")
                             logging.info(f"Assigned transparent material, {material_name}, to transparent object, {object.name}")
                         elif object_count > 1:
-                            if (transparency_tag in object.name or cutout_tag in object.name) and material_name.endswith(transparency_tag):
+                            if transparency_tag in object.name and material_name.endswith(transparency_tag):
                                 object.data.materials.append(material)
-                                if cutout_tag in object.name:
-                                    material.blend_method = "CLIP"
                                 print(f"Assigned transparent material, {material_name}, to transparent object, {object.name}")
                                 logging.info(f"Assigned transparent material, {material_name}, to transparent object, {object.name}")
-                            elif not transparency_tag in object.name and not cutout_tag in object.name and not material_name.endswith(transparency_tag):
+                            elif not transparency_tag in object.name in object.name and not material_name.endswith(transparency_tag):
                                 object.data.materials.append(material)
                                 print(f"Assigned opaque material, {material_name}, to opaque object, {object.name}")
                                 logging.info(f"Assigned opaque material, {material_name}, to opaque object, {object.name}")
@@ -1167,13 +1179,11 @@ def assign_materials(item_name):
                 material_name = str(material.name) # Get the material's name from that material's data block list.
                 for object in bpy.context.selected_objects:
                     if object.type == 'MESH': # Loop only through selected MESH type objects.
-                        if material_name.replace("_" + transparency_tag, "") in object.name and (transparency_tag in object.name or cutout_tag in object.name) and material_name.endswith(transparency_tag):
+                        if material_name.replace("_" + transparency_tag, "") in object.name and transparency_tag in object.name and material_name.endswith(transparency_tag):
                             object.data.materials.append(material)
-                            if cutout_tag in object.name:
-                                material.blend_method = "CLIP"
                             print(f"Assigned transparent material, {material_name}, to transparent object, {object.name}")
                             logging.info(f"Assigned transparent material, {material_name}, to transparent object, {object.name}")
-                        elif material_name in object.name and not transparency_tag in object.name and not cutout_tag in object.name and not material_name.endswith(transparency_tag):
+                        elif material_name in object.name and not transparency_tag in object.name and not material_name.endswith(transparency_tag):
                             object.data.materials.append(material)
                             print(f"Assigned opaque material, {material_name}, to opaque object, {object.name}")
                             logging.info(f"Assigned opaque material, {material_name}, to opaque object, {object.name}")
