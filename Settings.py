@@ -65,7 +65,7 @@ class TRANSMOGRIFIER_PG_TransmogrifierSettings(PropertyGroup):
             ("export", "Export", "Set mode to batch export 3D files", 'EXPORT', 1),
             ("convert", "Convert", "Set mode to batch convert 3D files", 'FILE_REFRESH', 2),
         ],
-        default="export",
+        default="convert",
         update=Functions.update_settings_by_batch_mode,
     )
     # Advanced UI toggle.

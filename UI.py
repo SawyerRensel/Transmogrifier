@@ -250,7 +250,7 @@ def draw_settings_general(self, context):
 
     # Menu and buttons at the top of the section.
     row = self.layout.row(align=False)
-    row.prop(settings, 'batch_mode', text='')
+    # row.prop(settings, 'batch_mode', text='')
     row.prop(settings, 'logging_save_summary', text='', icon="SPREADSHEET")
     row.operator('transmogrifier.advanced_ui', text="", icon="OPTIONS", depress=True if settings.advanced_ui else False)
     help = row.operator('transmogrifier.help', text="", icon="QUESTION")
