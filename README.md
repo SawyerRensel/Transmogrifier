@@ -80,7 +80,7 @@ If Transmogrifier isn't working the way you expected, please let us know by subm
 
 ***
 ## License
-Transmogrifier is open-source/licensed-free software under the [GNU GPL v3.0](https://github.com/sawyerrensel/Transmogrifier/blob/main/LICENSE).
+Transmogrifier is open-source/licensed-free software under the [GNU GPL v3.0](https://github.com/sawyerrensel/Transmogrifier/blob/main/LICENSE). The custom icons in [icons/](icons/) are released under [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) (public domain).
 
 *What is Free Software?*
 

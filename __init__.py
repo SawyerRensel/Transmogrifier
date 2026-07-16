@@ -33,26 +33,17 @@ import importlib
 
 
 
-#  █████ ██████   █████ ███████████    ███████   
-# ░░███ ░░██████ ░░███ ░░███░░░░░░█  ███░░░░░███ 
+#  █████ ██████   █████ ███████████    ███████
+# ░░███ ░░██████ ░░███ ░░███░░░░░░█  ███░░░░░███
 #  ░███  ░███░███ ░███  ░███   █ ░  ███     ░░███
 #  ░███  ░███░░███░███  ░███████   ░███      ░███
 #  ░███  ░███ ░░██████  ░███░░░█   ░███      ░███
-#  ░███  ░███  ░░█████  ░███  ░    ░░███     ███ 
-#  █████ █████  ░░█████ █████       ░░░███████░  
-# ░░░░░ ░░░░░    ░░░░░ ░░░░░          ░░░░░░░    
+#  ░███  ░███  ░░█████  ░███  ░    ░░███     ███
+#  █████ █████  ░░█████ █████       ░░░███████░
+# ░░░░░ ░░░░░    ░░░░░ ░░░░░          ░░░░░░░
 
-bl_info = {
-    "name": "Transmogrifier",
-    "author": "Sawyer Rensel",
-    "version": (2, 1, 0),
-    "blender": (5, 2),
-    "category": "Import-Export",
-    "location": "Set in preferences below. Default: 3D Viewport Side Panel (Transmogrifier Tab)",
-    "description": "Batch converts 3D files and associated textures into other formats.",
-    "doc_url": "https://sawyerrensel.github.io/Transmogrifier",
-    "tracker_url": "https://github.com/sawyerrensel/Transmogrifier/issues",
-}
+# Keep in sync with "version" in blender_manifest.toml. Used only for display (e.g. panel labels).
+__version__ = "2.1.0"
 
 
 
@@ -75,13 +66,13 @@ modules = (
 
 def import_modules():
     for mod in modules:
-        importlib.import_module(mod, bl_info["name"])
+        importlib.import_module(mod, __package__)
 
 def reimport_modules():
     for mod in modules:
         # Reimporting modules during addon development
-        want_reload_module = importlib.import_module(mod, bl_info["name"])
-        importlib.reload(want_reload_module)   
+        want_reload_module = importlib.import_module(mod, __package__)
+        importlib.reload(want_reload_module)
 
 import_modules()
 reimport_modules()

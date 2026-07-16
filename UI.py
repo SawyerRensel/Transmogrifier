@@ -42,7 +42,7 @@ from bpy.props import (
 )
 from pathlib import Path
 from bpy.utils import previews
-from . import bl_info
+from . import __version__
 from . import Functions
 
 
@@ -248,14 +248,6 @@ def draw_settings_general(self, context):
     self.layout.use_property_split = True
     self.layout.use_property_decorate = False
 
-    # Menu and buttons at the top of the section.
-    row = self.layout.row(align=False)
-    # row.prop(settings, 'batch_mode', text='')
-    row.prop(settings, 'logging_save_summary', text='', icon="SPREADSHEET")
-    row.operator('transmogrifier.advanced_ui', text="", icon="OPTIONS", depress=True if settings.advanced_ui else False)
-    help = row.operator('transmogrifier.help', text="", icon="QUESTION")
-    help.link = "https://sawyerrensel.github.io/Transmogrifier/"
-
     # Batch button
     row = self.layout.row(align=True)
     match settings.batch_mode:
@@ -266,10 +258,18 @@ def draw_settings_general(self, context):
         case "export":
             row.operator('transmogrifier.batch_export', icon_value=custom_icons['Transmogrifier_Icon'].icon_id)
 
-    
     row.scale_x = 1.25
     row.operator('transmogrifier.forecast', text='', icon='INFO')
     row.scale_y = 1.5
+
+    # Menu and buttons at the top of the section.
+    row = self.layout.row(align=False)
+    # row.prop(settings, 'batch_mode', text='')
+    row.prop(settings, 'logging_save_summary', text='', icon="SPREADSHEET")
+    row.operator('transmogrifier.advanced_ui', text="Advanced Settings", icon="OPTIONS", depress=True if settings.advanced_ui else False)
+    help = row.operator('transmogrifier.help', text="", icon="QUESTION")
+    help.link = "https://sawyerrensel.github.io/Transmogrifier/"
+    
 
     self.layout.separator(factor = separator_factor)
 
@@ -800,11 +800,10 @@ def draw_popover(self, context):
 
 # Side Panel panel (used with Side Panel option)
 class VIEW3D_PT_transmogrifier(Panel):
-    version = "".join([(str(num) + ".") for num in bl_info["version"]]).rstrip(".")
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_category = "Transmogrifier"
-    bl_label = f"Transmogrifier {version}"
+    bl_label = f"Transmogrifier {__version__}"
 
     def draw(self, context):
         settings = bpy.context.scene.transmogrifier_settings
@@ -924,7 +923,7 @@ class POPOVER_PT_transmogrifier(Panel):
 
 # Addon settings that are NOT specific to a .blend file
 class TransmogrifierPreferences(AddonPreferences):
-    bl_idname = bl_info["name"]
+    bl_idname = __package__
 
     def addon_location_updated(self, context):
         bpy.types.TOPBAR_MT_editor_menus.remove(draw_popover)
@@ -996,7 +995,7 @@ class TRANSMOGRIFIER_OT_advanced_ui(Operator):
 
     def execute(self, context):
         settings = bpy.context.scene.transmogrifier_settings
-        prefs = bpy.context.preferences.addons[bl_info["name"]].preferences
+        prefs = bpy.context.preferences.addons[__package__].preferences
         panels = [
             VIEW3D_PT_transmogrifier_textures, 
             VIEW3D_PT_transmogrifier_optimize, 
@@ -1053,7 +1052,7 @@ def register():
         bpy.utils.register_class(cls)
 
     # Show addon UI
-    prefs = bpy.context.preferences.addons[bl_info["name"]].preferences
+    prefs = bpy.context.preferences.addons[__package__].preferences
     if prefs.addon_location == 'TOPBAR':
         bpy.types.TOPBAR_MT_editor_menus.append(draw_popover)
     if prefs.addon_location == '3DHEADER':

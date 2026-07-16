@@ -1,20 +1,36 @@
 schema_version = "1.0.0"
 
 id = "transmogrifier"
-version = "2.0.0"
+version = "2.1.0"
 name = "Transmogrifier"
 tagline = "Batch converts 3D files and textures into other formats"
-maintainer = "Sapwood Studio <support@sapwood.studio>"
+maintainer = "Sawyer Rensel"
 type = "add-on"
-
-permissions = ["files"]
 
 website = "https://sawyerrensel.github.io/Transmogrifier/"
 
 tags = ["Import-Export", "Pipeline"]
 
-blender_version_min = "3.6.0"
+blender_version_min = "5.2.0"
 
 license = [
   "SPDX:GPL-3.0-or-later",
+]
+
+copyright = [
+  "2023-2026 Sawyer Rensel",
+]
+
+[permissions]
+files = "Import/export and convert 3D files and textures on disk"
+
+[build]
+paths_exclude_pattern = [
+  "__pycache__/",
+  "/.git/",
+  "/*.zip",
+  "/.github/",
+  "/docs/",
+  "/mkdocs.yml",
+  "/Converter_Report.json",
 ]

@@ -2,3 +2,4 @@
 .venv
 site/
 *.pyc
+/Converter_Report.json
